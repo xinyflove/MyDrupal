@@ -1,0 +1,5 @@
+name = cpic主要处理模块
+description = 这个模块主要用来处理消防云主要的业务逻辑，比如设置等 
+package = vPaaS-cpic
+core = 7.x
+version = 7.x-1.0

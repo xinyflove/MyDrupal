@@ -1,0 +1,30 @@
+/*
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+*/
+/* 
+    Created on : 2014-2-26, 10:46:43
+    Author     : Johnny
+*/
+.alarm_first_image{
+   float: left;
+   margin: auto;
+}
+.alarm_sec_image{
+    float: right;
+}
+.alarm_last_image{
+    float: right;
+}
+.xiaoxi-right{
+	width: 800px;
+    margin-left: 183px;
+    margin-top: -50px;
+}
+.shijiandian{
+	margin-left: 120px;
+}
+.jinggaoneirong{
+	margin-left: 120px;
+}

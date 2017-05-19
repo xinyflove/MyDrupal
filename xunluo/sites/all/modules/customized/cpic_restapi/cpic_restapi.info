@@ -1,0 +1,6 @@
+name = Restful接口
+description = 公安内网暴露的服务目录 -- Restful接口
+package = vPaaS-Restful
+core = 7.x
+dependencies[] = services
+dependencies[] = rest_server

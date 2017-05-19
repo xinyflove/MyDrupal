@@ -1,0 +1,113 @@
+<?php
+
+/**
+ * Implements hook_init().
+ */
+function app_manage_init() {
+    drupal_add_css(drupal_get_path('module', 'onlinechat') . '/js/jgrowl/jquery.jgrowl.css');
+    drupal_add_js(drupal_get_path('module', 'onlinechat') . '/js/jgrowl/jquery.jgrowl.js');
+    drupal_add_js(array('onlinechat' => array('notification_time' => variable_get('chat_notify_notification_lifetime_seconds', 3))), 'setting');
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function app_manage_menu() {
+
+    $items['appmanage'] = array(
+        'title' => t('App管理'),
+        'type' => MENU_NORMAL_ITEM,
+        'page callback' => 'appmanage_theme',
+        'weight'=>-10,
+        //'page arguments' => array('onlinechat_send_control_msg_form'),
+        'access callback' => 'user_is_logged_in',
+        'menu_name' => 'main-menu',
+        'file' => 'app_manage.pages.inc',
+    );
+
+    $items['appmanage/add'] = array(
+        'title' => t('App添加'),
+        'type' => MENU_NORMAL_ITEM,
+        'page callback' => 'drupal_get_form',
+        //'page arguments' => array(1),
+        'weight'=>-10,
+        'page arguments' => array('appmanage_add_form_theme', 1),
+        'access callback' => 'user_is_logged_in',
+        'menu_name' => 'main-menu',
+        'file' => 'app_manage.pages.inc',
+    );
+
+    $items['appmanage/edit/%'] = array(
+        'title' => t('App修改'),
+        'type' => MENU_NORMAL_ITEM,
+        'page callback' => 'drupal_get_form',
+        'weight'=>-10,
+        'page arguments' => array('appmanage_edit_form_theme', 2),
+        'access callback' => 'user_is_logged_in',
+        'menu_name' => 'main-menu',
+        'file' => 'app_manage.pages.inc',
+    );
+
+    $items['appmanage/del/%'] = array(
+        'title' => t('App删除'),
+        'type' => MENU_NORMAL_ITEM,
+        'page callback' => 'appmanage_del_theme',
+        'page arguments' => array(2),
+        'weight'=>-10,
+        'access callback' => 'user_is_logged_in',
+        'menu_name' => 'main-menu',
+        'file' => 'app_manage.pages.inc',
+    );
+
+    $items['appmanage/del/%/%'] = array(
+        'title' => t('App确认删除or取消'),
+        'type' => MENU_NORMAL_ITEM,
+        'page callback' => 'appmanage_del_and_cancel',
+        'page arguments' => array(2,3),
+        'weight'=>-10,
+        'access callback' => 'user_is_logged_in',
+        'menu_name' => 'main-menu',
+        'file' => 'app_manage.pages.inc',
+    );
+
+    $items['appmanage/cancel'] = array(
+        'title' => t('App添加'),
+        'type' => MENU_NORMAL_ITEM,
+        'page callback' => 'appmanage_cancel',
+        'page arguments' => NULL,
+        'weight'=>-10,
+        'access callback' => 'user_is_logged_in',
+        'menu_name' => 'main-menu',
+        'file' => 'app_manage.pages.inc',
+    );
+
+
+    return $items;
+}
+
+
+
+function aboutme_view_page() {
+    $output = '<h1>App管理</h1>';
+    //建立--选择表 并使用分页
+    $query = db_select('users', 'n')->extend('PagerDefault');
+
+
+//增加查询字段
+    $query->addField('n', 'uid');
+    $query->addField('n', 'name');
+//条件 status == 1 的
+    $query->condition('n.status', 1)->limit(5);
+//ORDER BY
+    $query->orderBy('uid', 'DESC');
+    $res = $query->execute()->fetchAll();
+    foreach($res as $obj)
+    {
+        $rows[] = array('uid' => $obj->uid, 'name' => $obj->name);
+    }
+
+    $header = array('nid', '标题');
+    $output .= theme('table',  array('header' => $header, 'rows' => $rows));
+    $output .= theme('pager');
+    return $output;
+}

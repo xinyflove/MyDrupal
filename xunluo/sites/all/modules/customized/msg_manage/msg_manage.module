@@ -1,0 +1,31 @@
+<?php
+/**
+ * Implements hook_menu().
+ */
+function msg_manage_menu() {
+
+    $items['msg/getCallMsg'] = array(
+        'title' => t('获取回执消息'),
+        'description' => t('警务信息一键通，获取回执消息'),
+        'type' => MENU_CALLBACK,
+        'page callback' => 'msg_manage_get_callmsg',
+        'page arguments' => NULL,
+        'access callback' => 'user_is_logged_in',
+        'file' => 'msg_manage.pages.inc',
+    );
+
+    return $items;
+
+}
+
+/**
+ * Implements hook_cron().
+ */
+function msg_manage_cron(){
+    module_load_include('inc', 'msg_manage', 'msg_manage.pages');
+    $res = 'run';
+    $res = msg_manage_get_callmsg();
+
+    watchdog('cron', 'msg_manage_cron '.$res);
+
+}

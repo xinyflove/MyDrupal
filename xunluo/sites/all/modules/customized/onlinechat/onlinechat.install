@@ -1,0 +1,26 @@
+<?php
+
+/*
+ * hook_intall()
+ */
+
+function onlinechat_install() {
+  variable_set('chat_notify_notification_lifetime_seconds', 3);
+}
+
+/**
+ * hook_unistall()
+ */
+function onlinechat_uninstall() {
+  variable_del('chat_notify_notification_lifetime_seconds');
+}
+
+/**
+ * Implements hook_schema().
+
+  */
+function onlinechat_schema() {
+
+  //  return $schema;
+}
+

@@ -1,0 +1,5 @@
+name = vPaaS 企业/机构
+description = vPaaS 系统所添加的机构信息，这部分信息是从vPaaS中心获取过来的，定时更新
+package = vPaaS
+core = 7.x
+version = 7.x-2.0

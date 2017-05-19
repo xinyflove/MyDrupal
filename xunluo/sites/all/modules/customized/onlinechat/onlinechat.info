@@ -1,0 +1,5 @@
+name = 在线聊天
+description = 利用webscoket实现了手机与手机， WEB与手机，WEB与WEB的在线聊天
+package = vPaaS-basic
+core = 7.x
+version = 7.x-1.0

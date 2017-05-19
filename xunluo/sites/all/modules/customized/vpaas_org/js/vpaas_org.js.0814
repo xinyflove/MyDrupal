@@ -1,0 +1,118 @@
+(function($){
+$(document).ready(function() {
+            
+//start of logic
+    $('#orgTree').tree({
+        url:'/org/tree',
+        lines:true,
+        onClick: function(node){
+            if(node.attributes.type==='corp'){
+                var menuUrl = $("#Nav a.active").attr('href');
+                if(menuUrl.indexOf('kpi') == -1){ //不是KPI页面
+                    var url = menuUrl+'/'+node.attributes.nid;
+                    
+                    $('#mainContent').panel('refresh',url,{
+                        'type':2,
+                    });
+
+                }else{  //KPI分析
+                    var subMenuUrl = $("#kpi-mainContent ul.submenu li a.active").attr('url');
+                    var url = subMenuUrl  +'/'+node.attributes.nid;
+                    $('#mainContent').panel('refresh',url,{
+                        'type':2,
+                    });
+                }                
+                return false;
+    
+            }
+            else if (node.attributes && (node.attributes.type == 'city' || node.attributes.type == 'district' || node.attributes.type == 'btype' )) {
+                if($("#Nav ul.sf-menu li ul li a").attr('active') == null )
+                { 
+                    changeHomeageBmap(node.id);
+                }
+                else if ($("#Nav ul.sf-menu li ul li a.active").attr('url').indexOf('homepage') >= 0) 
+                {                    
+                    changeHomeageBmap(node.id);
+                };  
+                // var url = "/homepage/" + node.attributes.type + "/" + node.attributes.nid;
+                // $('#mainContent').panel('refresh',url,{
+                //     'type':2,
+                // });                                  
+            };
+          
+	},
+        onDblClick:function(node){
+                    if(node.attributes && (node.attributes.type == 'district' || node.attributes.type == 'btype' )) {
+ 
+                    $('#kpi-mainContent').panel('refresh',node.attributes.url,{
+                        'type':2,
+                    });
+                }
+           }
+                
+    });
+
+    $('#checkedOrgTree').tree({
+        url:'/org/tree',
+        lines:true,
+        checkbox:true,
+        cascadeCheck:false,
+        onClick: function(node){
+         
+        },
+        onBeforeCheck:function(node, checked){
+            var nodes = $('#checkedOrgTree').tree('getChecked');
+            if(nodes.length > 1){
+                
+                for(var i=0; i<nodes.length; i++){
+                    if(nodes[i].attributes.type.indexOf(node.attributes.type) == -1){
+                        $.messager.show({
+                            title: '提示',
+                            msg: "只能选择同等单位进行比较"
+                        });
+
+                        return false;
+                    } 
+                }
+            }
+
+            if(nodes.length > 4){
+                $.messager.show({
+                        title: '提示',
+                        msg: "最多选择4家对比单位"
+                    });
+                return false; 
+
+            }
+
+        },
+        onCheck:function(node){
+            
+
+        }
+    });
+
+
+   /* $('#recentTree').tree({
+        url:'/org/recenttree',
+        lines:true,
+        onClick: function(node){
+            if(node.attributes.type==='corp'){
+                
+                var url = $("#Nav a.active").attr('href')+'/'+node.attributes.nid;
+                $('#mainContent').panel('refresh',url,{
+                    'type':2,
+                });
+                return false;
+    
+            }
+	}
+    });
+    */
+     //    $('#search_input').fastLiveFilter('#orgTree');
+
+//end of logic
+});
+})(jQuery);
+
+

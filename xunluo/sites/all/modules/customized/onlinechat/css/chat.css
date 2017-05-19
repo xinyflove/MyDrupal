@@ -1,0 +1,68 @@
+#InterlocutionWrap {
+	width: 500px;
+	height: 500px;
+	background: #fff;
+	overflow-y: scroll;
+}
+.interlocution {	
+}
+.interlocution .leftConment {
+	padding-bottom: 15px;
+	overflow: hidden;
+}
+.interlocution .leftConment .talker {
+	float: left;
+}
+.interlocution .speakContent {
+	max-width: 360px;
+	overflow: hidden;
+}
+.interlocution .leftConment .speakContent {
+	float: left;
+	margin-right: 30px;
+}
+.interlocution .leftConment .speakContent .icon {
+	float: left;
+	width: 0px;
+	height: 0px;
+	margin-top: 5px;
+	border-width: 5px;
+	border-color: #fff #9FC #fff #fff;
+	border-style: solid;
+}
+.interlocution  .contentBox {
+	width: 305px;
+	padding: 5px 10px;
+	background: #9FC;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
+}
+.interlocution .leftConment .speakContent .contentBox {
+	float: left;
+}
+
+.interlocution .rightConment {
+	width: 100%;
+	padding-bottom: 15px;
+	overflow: hidden;
+}
+.interlocution .rightConment .talker {
+	float: right;
+}
+.interlocution .rightConment .speakContent {
+	float: right;
+	margin-left: 30px;
+}
+.interlocution .rightConment .speakContent .icon {
+	float: right;
+	width: 0px;
+	height: 0px;
+	margin-top: 5px;
+	border-width: 5px;
+	border-color: #fff #fff #fff #9FC;
+	border-style: solid;
+}
+.interlocution .rightConment .speakContent .contentBox {
+	float: right;
+}

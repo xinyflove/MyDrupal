@@ -1,0 +1,155 @@
+<?php
+
+/**
+ * Implements hook_init().
+ */
+function onlinechat_init() {
+  drupal_add_css(drupal_get_path('module', 'onlinechat') . '/js/jgrowl/jquery.jgrowl.css');
+  drupal_add_js(drupal_get_path('module', 'onlinechat') . '/js/jgrowl/jquery.jgrowl.js');
+  drupal_add_js(array('onlinechat' => array('notification_time' => variable_get('chat_notify_notification_lifetime_seconds', 3))), 'setting');
+}
+
+/**
+ * Implementation of hook_menu().
+ * @author dein
+ */
+function onlinechat_menu() {
+
+     $items['onlinechat'] = array(
+        'title' => t('在线交流'),
+        'type' => MENU_NORMAL_ITEM,
+        'page callback' => 'onlinechat_landing_page',
+        'weight'=>-18,
+        'page arguments' => NULL,
+        'access callback' => 'user_is_logged_in',
+        'menu_name' => 'main-menu',
+        'file' => 'onlinechat.pages.inc',
+        );
+     $items['chatwith/%'] = array(
+        'title' => t('在线交流'),
+        'type' => MENU_CALLBACK,
+        'page callback' => 'onlinechat_talk_with_user',
+        'weight'=>-18,
+        'page arguments' => array(1),
+        'access callback' => 'user_is_logged_in',
+        'file' => 'onlinechat.pages.inc',
+        );
+     
+     $items['broadcast'] = array(
+        'title' => t('广播消息'),
+        'type' => MENU_NORMAL_ITEM,
+        'page callback' => 'drupal_get_form',
+        'weight'=>-18,
+        'page arguments' => array('onlinechat_broadcast_form'),
+        'access callback' => 'user_is_logged_in',
+        'menu_name' => 'main-menu',
+        'file' => 'onlinechat.pages.inc',
+        );
+     $items['controlmsg'] = array(
+        'title' => t('控制消息'),
+        'type' => MENU_NORMAL_ITEM,
+        'page callback' => 'drupal_get_form',
+        'weight'=>-18,
+        'page arguments' => array('onlinechat_send_control_msg_form'),
+        'access callback' => 'user_is_logged_in',
+        'menu_name' => 'main-menu',
+        'file' => 'onlinechat.pages.inc',
+        );
+    
+     
+    return $items;
+}
+
+
+/**
+ * Implements hook_permission().
+ */
+function onlinechat_permission() {
+  return array(
+    'access kpi data' => array(
+      'title' => t('允许查看统计数据'),
+      'description' => t('具有此类权限的人可以查看各类统计数据，企业或者用户只能看到本企业的统计数据.'),
+    ),
+  );
+}
+
+
+
+/* hook_theme
+ * 
+ */
+function onlinechat_theme($existing, $type, $theme, $path)
+{
+    return array(
+
+     'onlinechat_homepage' => array(
+           'template' => 'onlinechat--homepage',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'onlinechat').'/tpl',
+    
+      ),
+     );
+    
+}
+/**
+ * Implements hook_block_info().
+ *
+ * This hook declares what blocks are provided by the module.
+ */
+function onlinechat_block_info() {
+    $blocks['online_chat_userlist'] = array(
+    // info: The name of the block.
+    'info' => t('在线聊天用户列表'),
+    // Block caching options (per role, per user, etc.)
+    // DRUPAL_CACHE_PER_ROLE is the default.
+    'cache' => DRUPAL_CACHE_PER_ROLE,
+  );
+    
+      return $blocks;
+
+}
+
+/**
+ * Implements hook_block_view().
+ *
+ * This hook generates the contents of the blocks themselves.
+ */
+function onlinechat_block_view($delta = '') {
+  // The $delta parameter tells us which block is being requested.
+  switch ($delta) {
+    case 'online_chat_userlist':
+      $block['subject'] = t('在线聊天用户列表');
+      $block['content'] = onlinechat_online_chat_userlist($delta);
+      break;
+  }
+  return $block;
+}
+
+
+function onlinechat_online_chat_userlist($delta){
+    $variables = array(
+        'items' => array(),
+        // Leave the title element empty to omit the title.
+        'title' => '',
+        'type' => 'ul',
+        'attributes' => array(),
+      );
+
+      $variables['items'][] = l('u001','chatwith/u001');
+      $variables['items'][] = l('u002','chatwith/u002');
+      $variables['items'][] = l('u003','chatwith/u003');
+      $variables['items'][] = l('u004','chatwith/u004');
+      $variables['items'][] = l('u005','chatwith/u005');
+
+   
+     $result = array(
+        '#markup' => theme('item_list', $variables),
+        
+      );
+      return $result;
+}
+

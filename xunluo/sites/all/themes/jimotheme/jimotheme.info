@@ -1,0 +1,21 @@
+name =  西温泉社区管理平台主题
+description = a subtheme based on bootstrap, designed for the 西温泉社区管理平台 project.
+package = jimo
+version = VERSION
+core = 7.x
+
+base theme = bootstrap
+
+regions[navigation]     = 'Navigation'
+regions[header]         = 'Top Bar'
+regions[highlighted]    = 'Highlighted'
+regions[help]           = 'Help'
+regions[content]        = 'Content'
+regions[sidebar_first]  = 'Sidebar First'
+regions[sidebar_second] = 'Sidebar Second'
+regions[footer]         = 'Footer'
+
+stylesheets[all][] = css/jimotheme.css
+
+settings[toggle_name] = 0
+settings[toggle_search] = 1

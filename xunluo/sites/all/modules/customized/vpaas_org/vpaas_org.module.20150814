@@ -1,0 +1,585 @@
+<?php
+
+define('BUSINESS_TYPE_MACHINENAME','businesstype');
+
+/**
+ * Implementation of hook_menu().
+ * @author dein
+ */
+function vpaas_org_menu() {
+    $items['orgs'] = array(
+        'title' => '组织列表',
+        'page callback' => 'vpaas_org_list',
+        'access callback' => 'user_is_logged_in',
+        'type' => MENU_CALLBACK,
+        'file' => 'vpaas_org.pages.inc',
+    );
+
+    $items['node/%node/devices'] = array(
+        'title' => '摄像头列表',
+        'page callback' => 'node_page_org_devices',
+        'page arguments' => array(1),
+        'access callback' => 'node_is_org',
+        'access arguments' => array(1),
+        'weight' => 0,
+        'type' => MENU_LOCAL_TASK,
+        'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    );
+
+
+    //admin 
+    $items['admin/vpaas/orgs'] = array(
+        'title' => '组织机构同步',
+        'type' => MENU_LOCAL_TASK,
+        'page callback' => 'vpaas_org_admin_sync_settings',
+        'access callback' => 'user_is_logged_in',
+        'weight' => -12,
+    );
+    
+    $items['org/tree'] = array(
+        'title' => t('组织机构树'),
+        'type' => MENU_CALLBACK,
+        'weight' => -11,
+        'page callback' => 'vpaas_org_build_orgs_tree',
+        'access callback' => 'user_is_logged_in',
+        'file' => 'vpaas_org.pages.inc',
+    );
+    $items['org/recenttree'] = array(
+        'title' => t('最近访问的组织机构树'),
+        'type' => MENU_CALLBACK,
+        'weight' => -11,
+        'page callback' => 'vpaas_org_build_recent_access_org_tree',
+        'access callback' => 'user_is_logged_in',
+        'file' => 'vpaas_org.pages.inc',
+    );
+    $items['org/get/%'] = array(
+        'title' => t('获取某个组织下的数据'),
+        'type' => MENU_CALLBACK,
+        'weight' => -11,
+        'page callback' => 'vpaas_org_get_org_list',
+        'page arguments' => array(2),
+        'access callback' => true,
+        'file' => 'vpaas_org.pages.inc',
+    );
+    
+
+    return $items;
+}
+
+function node_is_org($node) {
+    return $node->type == 'org';
+}
+
+function node_page_org_devices($node) {
+    $output = '';
+
+    ini_set("soap.wsdl_cache_enabled", "0");
+
+    $wsdl_url = variable_get('vpaas_soap_wsdl', 'http://10.12.3.101:1210/?wsdl');
+    $client = new vpaasSoapClient($wsdl_url);
+
+    $orgs_list = $client->zehinGetDeviceListByOrg($node->orgs['org_id']);
+    foreach ($orgs_list as $org_id => $org) {
+        $output .= '<h3>机构代码：' . $org['org_id'] . '机构名称:' . $org['name'] . '</h3>';
+        $output .='<ul>';
+        if (isset($org['cams'])) {
+            foreach ($org['cams'] as $cam_id => $cam) {
+                $output .= '<li>' . l($cam['name'], 'monitor/rtmp/' . $cam_id) . '</li>';
+            }
+        }
+        $output .='</ul>';
+    }
+
+
+    return $output;
+}
+
+/**
+ * Implements hook_node_insert().
+ *
+ * As a new node is being inserted into the database, we need to do our own
+ * database inserts.
+ */
+function vpaas_org_node_insert($node) {
+    if ($node->type == 'org') {
+        $fields = array(
+            'nid' => $node->nid,
+            'org_id' => $node->org_id,
+            'parent_id' => $node->parent_id,
+        );
+        db_insert('organizations')
+                ->fields($fields)
+                ->execute();
+    }
+}
+
+/**
+ * Implements hook_node_load().
+ *
+ */
+function vpaas_org_node_load($nodes, $types) {
+    $result = db_query('SELECT * FROM {organizations} WHERE nid IN(:nids)', array(':nids' => array_keys($nodes)))->fetchAllAssoc('nid');
+
+    foreach ($nodes as &$node) {
+        $node->orgs['org_id'] = isset($result[$node->nid]->org_id) ?
+                $result[$node->nid]->org_id : 0;
+        $node->orgs['parent_id'] = isset($result[$node->nid]->parent_id) ?
+                $result[$node->nid]->parent_id : 0;
+    }
+}
+
+/* Implementation hook_node_delete 
+ * 
+ */
+
+function vpaas_org_node_delete($node) {
+    db_delete('organizations')
+            ->condition('nid', $node->nid)
+            ->execute();
+}
+
+/**
+ * Implementation of hook_block_info().
+ */
+function vpaas_org_block_info() {
+    $blocks['enterprise-list'] = array(
+        'info' => t('机构列表－树状结构'),
+    );
+    $blocks['kpi-enterprise-list'] = array(
+        'info' => t('机构列表－数据比较'),
+    );
+
+    return $blocks;
+}
+
+function vpaas_org_block_view($delta = '') {
+
+
+    $block = array();
+    switch ($delta) {
+        case 'enterprise-list':
+            $block['subject'] = t('机构列表－树状结构');
+            $block['content'] = vpaas_org_build_tree_enterprise_list();
+            break;
+        case 'kpi-enterprise-list':
+            $block['subject'] = t('机构列表－数据对比');
+            $block['content'] = vpaas_org_build_checked_tree_enterprise_list();
+            break;    
+        
+    }
+    return $block;
+}
+
+function vpaas_org_build_tree_enterprise_list() {
+    $module_path = drupal_get_path('module', 'vpaas_org');
+    drupal_add_js($module_path . '/js/jquery.fastLiveFilter.js');
+    drupal_add_js($module_path . '/js/vpaas_org.js');
+
+    $output = '';
+    $output .='<div class="search_tree_input">
+		<input type="text" class="easyui-searchbox" data-options="prompt:\'请输入关键字搜索\',searcher:doSearch" />
+                </div>
+			<div id="nav-tabs" class="easyui-tabs" data-options="tabWidth:100,fit:true">
+				 <div title="组织机构" style="padding:10px">
+					<div class="search_tree">
+						<ul id="orgTree"></ul>
+					</div>
+				 </div>
+			</div>';
+    return $output;
+}
+
+
+function vpaas_org_build_checked_tree_enterprise_list() {
+    $module_path = drupal_get_path('module', 'vpaas_org');
+    drupal_add_js($module_path . '/js/jquery.fastLiveFilter.js');
+    drupal_add_js($module_path . '/js/vpaas_org.js');
+
+    $output = '';
+    $output .='<div class="search_tree_input">
+        <input type="text" class="easyui-searchbox" data-options="prompt:\'请输入关键字搜索\',searcher:doSearch" />
+                </div>
+            <div id="nav-tabs" class="easyui-tabs" data-options="tabWidth:100,fit:true">
+                 <div title="组织机构" style="padding:10px">
+                    <div class="search_tree">
+                        <ul id="checkedOrgTree"></ul>
+                    </div>
+                 </div>
+            </div>';
+    return $output;
+}
+
+
+function _get_cameras_by_webservice($org_id){
+    $wsdl_url = variable_get('vpaas_soap_wsdl', 'http://112.253.7.53:1210/?wsdl');
+    $client = new vpaasSoapClient($wsdl_url);
+    if(!$client){
+        $device_list=array();
+    }else{
+        $device_list = $client->zehinGetDeviceListByOrg($org_id);
+    }
+    return $device_list;
+
+}
+
+
+function _get_devices($org_nid){
+    $device_list = array();
+    $results = db_select('field_data_field_org_nid', 'fo')
+                    ->condition('fo.bundle', 'asset')
+                    ->condition('fo.field_org_nid_target_id', $org_nid)
+                    ->fields('fo', array('entity_id'))->execute()->fetchAll();
+    foreach($results as $dev){
+        $device_node = node_load($dev->entity_id);
+        
+        $device_list[$dev->entity_id] = array(
+            'org_id'=>$org_id,
+            'name'=>$device_node->title,
+        );
+    }
+   
+    return $device_list;
+
+}
+
+/* menu clalback to set the orgs sync parament with vpaas center
+ *  device list  Array
+  (
+  [group id] => Array
+  (
+  [name] => HK220
+  [cams] => Array
+  (
+  [cam id] => cam pos
+  [cam id] => cam pos
+
+  )
+
+ */
+
+function vpaas_org_admin_sync_settings() {
+
+    global $user;
+    ini_set("soap.wsdl_cache_enabled", "0");
+
+    $wsdl_url = variable_get('vpaas_soap_wsdl', 'http://10.12.3.101:1210/?wsdl');
+    $client = new vpaasSoapClient($wsdl_url);
+
+    $query = db_select('organizations', 'org');
+    $query->fields('org', array('org_id', 'nid'));
+    $current_orgs = $query->execute()->fetchAll();
+
+    $orgs_list = $client->zehinGetOrgList();
+
+    $org_ids = array();
+    foreach ($orgs_list as $org_id => $org) {
+        $org_ids[] = $org_id;
+        vpaas_org_create_organization_node($org['name'], $user, $org, $org_id);
+    }
+    $nids = array();
+    foreach ($current_orgs as $current_org) {
+        if (!in_array($current_org->org_id, $org_ids)) {
+            db_delete('organizations')
+                    ->condition('org_id', $current_org->org_id)
+                    ->execute();
+            $nids[] = $current_org->nid;
+        }
+    }
+
+    if (!empty($nids)) {
+        node_delete_multiple($nids);
+    }
+    drupal_goto('admin/content');
+}
+
+/* helper function *  */
+
+/* get the org list 
+ * @param ,  $uid , the user uid 
+ */
+
+function vpaas_org_list_organizations($uid, $offset, $limit) {
+
+    $orgs = array();
+    // Retrieve the next group of nids.
+    $select = db_select('organizations', 'o')
+            ->fields('o')
+            ->orderBy('o.nid', 'ASC');
+
+    if ($offset && $limit) {
+        $select->range($offset, $limit);
+    }
+    if (!$offset && $limit) {
+        $select->range(0, $limit);
+    }
+    $results = $select->execute();
+    foreach ($results as $row) {
+        $orgs[$row->nid] = $row;
+    }
+    return $orgs;
+}
+
+/* get the org's camera  
+ * @param ,  $uid , the user uid 
+ */
+
+function vpaas_org_get_organization_cameras($org_id) {
+
+    ini_set("soap.wsdl_cache_enabled", "0");
+    $wsdl_url = variable_get('vpaas_soap_wsdl', 'http://10.12.3.101:1210/?wsdl');
+    $client = new vpaasSoapClient($wsdl_url);
+
+    $device_list = $client->zehinGetDeviceListByOrg($org_id);
+
+    return $device_list;
+}
+
+
+/*get the cameras information from db 
+ * 
+ */
+function _get_cameras_from_db($org_id){
+    $cams = array();
+    db_set_active('vpdata');
+    $query = db_select('cam_camtbl', 'c');
+    $query->join('dev_videosvr','v','v.vs_id = c.vs_id');
+    $query->fields('c', array( 'cam_id','cam_pos','vs_index'))
+      ->fields('v', array('vs_no'))
+       ->condition('v.inst_id', $org_id);
+    $results = $query->execute();
+    db_set_active('default');
+    foreach($results as $cam){
+        $cams[$cam->cam_id]=array(
+            'name'=>$cam->cam_pos,
+            'channel'=>$cam->vs_index,
+            'gwsn'=>$cam->vs_no,
+        );
+    }
+    
+    return $cams; 
+}
+
+/* create an org node by programmatically 
+ * * @param $title , the org title from vpaas.
+ * * @param, $user, the author of the org
+ * * @param, $org, the org values from vpaas
+ * * @return , the node object
+ */
+
+function vpaas_org_create_organization_node($title, $user, $org, $org_id = 0) {
+
+    $nid = 0;
+    $nid = db_query('SELECT nid
+                      FROM {organizations}
+                      WHERE org_id = :org_id'
+            , array(':org_id' => $org_id))
+            ->fetchField();
+
+
+
+    if ($nid) { // this is an update
+        $node = node_load($nid);
+        $node->title = $title;
+        $node->changed = strtotime("now");
+
+        node_save($node);
+        return $node;
+    } else {
+
+// add node properties
+        $newNode = new StdClass;
+        $newNode->type = 'org';
+
+        $newNode->title = $title;
+        $newNode->language = $GLOBALS['language']->language;
+        $newNode->uid = $user->uid;
+        $newNode->name = $user->name;
+        $newNode->created = strtotime("now");
+        $newNode->changed = strtotime("now");
+        $newNode->status = NODE_PUBLISHED;
+        $newNode->body['und'][0]['value'] = $org['inst_memo'];
+        $newNode->field_org_id['und'][0]['value'] = $org_id;
+        node_object_prepare($newNode);
+
+        $newNode->org_id = $org_id;
+        $newNode->parent_id = $org['parent_id'];
+        // save node
+        $newNode = node_submit($newNode);
+        node_save($newNode);
+
+        return $newNode;
+    }
+}
+
+
+function vpaas_org_get_root_org($org_id) {
+    $query = db_select('node', 'n');
+    $query->leftJoin('organizations', 'o', 'o.nid=n.nid');
+     $query->fields('n', array('nid', 'title'));
+    $query->fields('o');
+    $query->condition('o.org_id', $org_id);
+    $result = $query->execute()->fetchObject();
+
+    return $result;
+}
+
+/*获取指定组织下的所有组织结构
+ * 
+ */
+function vpaas_org_get_children_orgs($org_id = 0) {
+    if (!$org_id) {
+        $org_id = variable_get('vpaas_root_org_id', '20009');
+    }
+    $org_list = _vpaas_org_fetch_children($org_id);
+    return $org_list;
+}
+
+function _vpaas_org_fetch_children($org_id){
+    $arry = array();
+    $child = array();
+    $total = 0;
+    
+    $query = db_select('node', 'n');
+    $query->leftJoin('organizations', 'o', 'o.nid=n.nid');
+    $query->fields('n', array('nid', 'title'));
+    $query->fields('o');
+    $query->condition('o.parent_id', $org_id);
+    $results = $query->execute();
+    foreach($results as $result ){
+        $total ++; 
+        $child = _vpaas_org_fetch_children($result->org_id);
+        $arry[$result->nid]=array(
+            'title'=>$result->title,
+            'org_id'=>$result->org_id,
+            'children'=>$child,
+        );
+    }
+    return $arry;
+   
+}
+
+/*获取某个组织下的下一级组织节点
+ * 
+ */
+function vpaas_org_get_next_level_orgs($id, $offset = 0, $limit = 0){
+    $orgs = array();
+    // Retrieve the next group of nids.
+    $query = db_select('node', 'n');
+    $query->leftJoin('organizations', 'o', 'o.nid=n.nid');
+    $query->fields('n', array('nid', 'title'));
+    $query->fields('o');
+    $query->condition('o.parent_id', $id);
+    $query->orderBy('o.nid', 'ASC');
+
+   /* if ($offset && $limit) {
+        $query->range($offset, $limit);
+    }
+    if (!$offset && $limit) {
+        $query->range(0, $limit);
+    }
+    * 
+    */
+    $results = $query->execute();
+    foreach ($results as $row) {
+        $orgs[] = $row;
+    }
+    
+    return $orgs;
+
+}
+
+/*根据VPDATA.INSTID获取DRUPAL ORG NODE
+ * 
+ */
+function vpaas_org_get_node($inst_id){
+    $query = db_select('organizations', 'o');
+    $query->fields('o',array('nid'));
+    $query->condition('o.org_id', $inst_id);
+    $org_nid = $query->execute()->fetchField();
+    return node_load($org_nid);
+}
+
+/* 获取指定的ORGID的信息
+ * 
+ */
+function _vpaas_org_get_specified_org($org_id){
+    $query = db_select('node', 'n');
+    $query->leftJoin('organizations', 'o', 'o.nid=n.nid');
+    $query->fields('n', array('nid', 'title'));
+    $query->fields('o');
+    $query->condition('o.org_id', $org_id);
+    $org = $query->execute()->fetchObject();
+    return $org;
+}
+
+/*
+ * 组织部门列表
+ */
+
+function vpaas_org_get_orgs_list($org_id=0) {
+    global $user;
+    $org_list = array();
+        if ($org_id) {
+            
+            $all_parks = _get_orgs_query(array('parent_id' => $org_id))->fetchAll();
+            foreach ($all_parks as $park) {
+                $org_list[$park->nid] = array(
+                    'title' => $park->title,
+                    'cagid' => $park->org_id,
+                );
+                $aptments = _get_orgs_query(array( 'parent_id' =>$park->org_id));
+                foreach ($aptments as $apt) {
+                    $org_list[$park->nid]['children'][$apt->nid] = array(
+                        'title' => $apt->title,
+                        'cagid' => $apt->org_id,
+                    );
+                }
+            }
+        }
+    
+    return $org_list;
+}
+function _get_orgs_query($fields = array()) {
+    $limit = isset($fields['limit']) ? $fields['limit'] : '';
+    $search = isset($fields['search']) ? $fields['search'] : '';
+    $cag_id = isset($fields['cag_id']) ? $fields['cag_id'] : '';
+    $parent_id = isset($fields['parent_id']) ? $fields['parent_id'] : '';
+    $uid = isset($fields['uid']) ? $fields['uid'] : '';
+
+    $query = db_select('node', 'n');
+    $query->leftJoin('organizations', 'o', 'o.nid=n.nid');
+     $query->fields('n', array('nid', 'title'));
+    $query->fields('o');
+    if ($search) {
+        $query->condition('n.title', '%' . db_like($search) . '%', 'LIKE');
+    }
+    if ($cag_id) {
+        $query->condition('o.org_id', $cag_id);
+    }
+    if ($parent_id) {
+         $query->condition('o.parent_id', $parent_id);
+    }
+ //   $query->condition('n.type', ORG_TYPE);
+    $result = $query->execute();
+
+    return $result;
+}
+
+/*hook_node_view
+ * 
+ */
+function vpaas_org_node_view($node, $build_mode = 'full') {
+    $org_id  = db_query('SELECT org_id
+                      FROM {organizations}
+                      WHERE nid = :nid'
+            , array(':nid' => $node->nid))
+            ->fetchField();
+
+   if($node->type == 'org') {
+    $node->content['vpaas_org'] = array(
+      '#markup' => '<label>所属vPaaS组织</label><span>'.$org_id.'</span>',
+      '#weight' => -1,
+    );
+   }
+  
+}

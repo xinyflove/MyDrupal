@@ -1,0 +1,4 @@
+name = App管理
+description = App管理模块
+package = vPaaS-AppManage
+core = 7.x

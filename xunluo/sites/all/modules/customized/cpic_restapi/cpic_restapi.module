@@ -1,0 +1,215 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function cpic_restapi_menu() {
+
+
+    $items['testclient'] = array(
+        'title' => t('test client'),
+        'description' => t('Restful接口 client'),
+        'access arguments' => array('access administration pages'),
+        'page callback' => 'cpic_restapi_test_client',
+        'page arguments' => NULL,
+    );
+
+    $items['1.0/sendMessage'] = array(
+        'title' => t('按照手机号发送'),
+        'description' => t('警务信息一键通，按照手机号发送'),
+        'type' => MENU_CALLBACK,
+        'page callback' => 'cpic_restapi_send_message_by_phone',
+        'page arguments' => NULL,
+        'access callback' => 'user_is_logged_in',
+        'file' => 'cpic_restapi.pages.inc',
+    );
+
+    $items['1.0/sendMessageById'] = array(
+        'title' => t('按照身份证发送'),
+        'description' => t('警务信息一键通，按照身份证发送'),
+        'type' => MENU_CALLBACK,
+        'page callback' => 'cpic_restapi_send_message_by_id',
+        'page arguments' => NULL,
+        'access callback' => 'user_is_logged_in',
+        'file' => 'cpic_restapi.pages.inc',
+    );
+
+    $items['1.0/sendMessageByTag'] = array(
+        'title' => t('按照标签分组发送'),
+        'description' => t('警务信息一键通，按照标签分组发送'),
+        'type' => MENU_CALLBACK,
+        'page callback' => 'cpic_restapi_send_message_by_tag',
+        'page arguments' => NULL,
+        'access callback' => 'user_is_logged_in',
+        'file' => 'cpic_restapi.pages.inc',
+    );
+
+    return $items;
+
+}
+
+/**
+ * @callback
+ */
+function cpic_restapi_test_client() {
+
+    $output = '';
+
+    $output .= 'hello';
+
+    return $output;
+}
+
+/**
+ * Implements hook_perm().
+ */
+function cpic_restapi_perm() {
+
+}
+
+/* hook hook_services_resources */
+function cpic_restapi_services_resources() {
+
+    module_load_include('inc', 'cpic_restapi', 'resources/cpic_restapi_resource');
+
+    $cpic_restapi_resource = array(
+
+    );
+    $cpic_restapi_resource += _cpic_restapi_resource_definition();
+
+    return $cpic_restapi_resource;
+}
+
+/*
+ * 公共函数
+ */
+// 上传ftp文件
+function _cpic_restapi_ftp_put_file($file_path, $file){
+    $ftp_host = '121.42.173.144';
+    $ftp_port = '21';
+    $ftp_user = 'devin';
+    $ftp_pass = 'devin123';
+
+    ini_set('display_errors',1);
+    error_reporting(E_ALL|E_STRICT);
+
+    // set up a connection or die
+    //$conn_id = ftp_connect($ftp_host) or die("无法连接到$ftp_host\n");
+    $conn_id = ftp_connect($ftp_host);
+    if(!$conn_id) return array('code' => 0, 'msg' => "无法连接到$ftp_host");
+
+    $login_result = ftp_login($conn_id, $ftp_user, $ftp_pass);
+
+    if ((!$conn_id) || (!$login_result)) {
+        //echo "FTP connection has failed!";
+        //echo "Attempted to connect to $ftp_host for user $ftp_user";
+        //exit;
+        return array('code' => 0, 'msg' => "FTP connection has failed!"."Attempted to connect to $ftp_host for user $ftp_user");
+    } else {
+        //echo "Connected to $ftp_host, for user $ftp_user\n";
+    }
+
+    // try to login
+    $source_file = drupal_realpath($file_path);  //源地址
+    $destination_file = "/in/" .$file->filename;  //目标地址
+    $upload = ftp_put($conn_id, $destination_file, $source_file, FTP_BINARY) or die("Couldn't connect to $ftp_host");
+    // ftp_quit($conn_id);
+
+    if (!$upload) {
+        //echo "FTP upload has failed!";
+        return array('code' => 0, 'msg' => "FTP upload has failed!");
+    } else {
+        //echo "Uploaded $source_file to $ftp_host as $destination_file";
+    }
+    ftp_close($conn_id);
+
+    _cpic_restapi_del_file($file_path);
+    return array('code' => 1, 'msg' => "success");
+}
+
+// 发送文件
+function _cpic_restapi_send_message($to, $appId, $msgId, $content, $file)
+{
+    if($appId == '') return array('code' => 0, 'msg' => 'appId参数不能为空');
+    if($msgId == '') return array('code' => 0, 'msg' => 'msgId参数不能为空');
+    if(empty($content) && empty($file))
+    {
+        return array('code' => 0, 'msg' => 'content或file参数不能为空');
+    }
+
+    $mt = '';
+
+    if(!empty($file))
+    {
+        // 下载文件
+        $res = file_get_contents($file);
+        if($res)
+        {
+            $ext = '.'.end(explode('.', $file));
+            $filename = $appId.'-'.$msgId.'-'.time().$ext;
+            $filepath = 'public://mms/'.$filename;
+            $file = file_save_data($res, $filepath);
+
+            $ft = explode('/', $file->filemime);
+            if($ft[0] == 'audio') $mt = 'audio';
+            elseif($ft[0] == 'video') $mt = 'video';
+            elseif($ft[0] == 'image') $mt = 'image';
+            else $mt = 'file';
+
+            _cpic_restapi_ftp_put_file($file->uri,$file);
+            $content = $filename;
+        }
+        else
+        {
+            return array('code' => 0, 'msg' => '上传文件错误');
+        }
+    }
+
+    $sendArray = array(
+        'e'=>$content,
+        'fm'=>$appId,
+        'msgid' => $msgId,
+        'mt'=> $mt,
+        'to'=>  $to,
+    );
+
+    $file_name = 'mms'.time().'.txt'; // xml,pdf,doc etc as you needed
+    $dest_file = 'public://mms/' .$file_name;
+
+    /*array(
+        'fid' => '169',
+        'uri' => 'public://mms/mms1451877595.txt',
+        'filename' => 'mms1451877595.txt',
+        'filemime' => 'text/plain',
+        'uid' => '1',
+        'status' => 1,
+        'timestamp' => 1451877595,
+        'filesize' => 72,
+    ))*/
+    $file = file_save_data(json_encode($sendArray),$dest_file);
+    $res = _cpic_restapi_ftp_put_file($dest_file,$file);
+
+    if($res['code'])
+    {
+        $data = array('code' => 1, 'msg' => '文件已经生成并被交换到FTP区');
+    }
+    else
+    {
+        $data = array('code' => 1, 'msg' => $res['msg']);
+    }
+
+    return $data;
+}
+
+// 删除本地文件
+function _cpic_restapi_del_file($path)
+{
+    $fid = db_query("SELECT fid FROM {file_managed} WHERE uri = :path", array(':path' => $path))->fetchField();
+    if ($fid) {
+        $file = file_load($fid);
+        file_delete($file);
+    }
+    else {
+        file_unmanaged_delete($path);
+    }
+}

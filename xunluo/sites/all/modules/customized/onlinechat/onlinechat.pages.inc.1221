@@ -1,0 +1,119 @@
+<?php
+
+
+
+
+function onlinechat_landing_page(){
+  //  $build_arrays = drupal_get_form('onlinechat_login_form');
+  //  return render($build_arrays);
+    
+      $pass = '666666';
+        global $user ; 
+        $name=$user->name;
+        $url = "http://121.42.173.144:10000/login?u=$name&p=$pass";
+        $result = drupal_http_request($url);
+        if($result->code == 200){ //数据获取成功
+            $data = json_decode($result->data);
+            if($data->c==1000){ //登录成功
+               $jwt = $data->m->j; 
+               variable_set('user_jwt_'.$user->uid,$jwt);
+             //  drupal_add_js('//cdn.jsdelivr.net/sockjs/1.0.3/sockjs.min.js', 'external');
+
+               drupal_set_message($user->name.'已经准备好了了聊天');
+
+              }
+        }else{
+            drupal_set_message('登录错误');
+        }
+        $output = '';
+     /*   drupal_add_js( array ("onlinechat" => array('jwt'=>variable_get('user_jwt_'.$user->uid,'123'))), 'setting');
+        drupal_add_js(drupal_get_path('module','onlinechat').'/js/onlinechat.js');
+        drupal_add_css(drupal_get_path('module','onlinechat').'/css/chat.css');
+        
+        $output .='<div class="chatwind">';
+        $output .= '<div data-from="Sonu Joshi" id="convo">  
+                    <ul class="chat-thread">
+                    </ul>';
+        $output .='<input style="width:300px;" placeholder="Type here..." class="inputMessage">';
+
+        $output .='</div>';
+       */
+        $output .="请从左侧选择聊天对象"; 
+        return $output; 
+}
+
+function onlinechat_login_form($form, &$form_state) {
+ drupal_add_js('//cdn.jsdelivr.net/sockjs/1.0.3/sockjs.min.js', 'external');
+ drupal_add_js(drupal_get_path('module','onlinechat').'/js/onlinechat.js');
+      
+  $form['description'] = array(
+    '#type' => 'item',
+    '#title' => t('要聊天，首先登录系统'),
+  );
+
+  $form['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Name'),
+      '#default_value'=>'u003',
+  );
+  $form['pass'] = array(
+    '#type' => 'textfield',
+    '#title' => t('密码'),
+     '#default_value'=>'666666',
+   
+  );
+  
+
+  // Adds a simple submit button that refreshes the form and clears its
+  // contents. This is the default behavior for forms.
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Submit',
+  );
+  return $form;
+}
+
+function onlinechat_login_form_submit($form, &$form_state) {
+        $name = $form_state['values']['name'];
+        $pass = $form_state['values']['pass'];
+        global $user ; 
+        $url = "http://121.42.173.144:10000/login?u=$name&p=$pass";
+        $result = drupal_http_request($url);
+        if($result->code == 200){ //数据获取成功
+            $data = json_decode($result->data);
+            if($data->c==1000){ //登录成功
+                $jwt = $data->m->j; 
+               variable_set('user_jwt_'.$user->uid,$jwt);
+               drupal_add_js('//cdn.jsdelivr.net/sockjs/1.0.3/sockjs.min.js', 'external');
+
+               drupal_set_message('登录成功');
+
+              }
+        }else{
+            drupal_set_message('登录错误');
+        }
+}
+
+
+/*
+ * menu callback
+ */
+function onlinechat_talk_with_user($username){
+       $output = '';
+       global $user;
+       
+        drupal_add_js( array ("onlinechat" => array('from'=>$user->name,"to"=>$username, 'jwt'=>variable_get('user_jwt_'.$user->uid,'123'))), 'setting');
+        drupal_add_js(drupal_get_path('module','onlinechat').'/js/onlinechat.js');
+        drupal_add_css(drupal_get_path('module','onlinechat').'/css/chat.css');
+        
+        $output .='<div class="chatwind">';
+        $output .='<span class="chat-status">聊天准备就绪</span>';
+        $output .= '<div data-from="Sonu Joshi" id="convo">  
+                    <ul class="chat-thread">
+                    </ul>';
+        $output .= '<div style="width:50%; color:black;"><span>'.$user->name.'说:</span> <input style="width:250px;" placeholder="Type here..." class="inputMessage"></div>';
+
+        $output .='</div>';
+        
+        return $output; 
+}

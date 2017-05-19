@@ -1,0 +1,26 @@
+<?php
+
+/*
+ * hook_intall()
+ */
+
+function cpic_main_install() {
+    //nothing.
+}
+
+/**
+ * hook_unistall()
+ */
+function cpic_main_uninstall() {
+    // nothing.
+}
+
+/**
+ * Implements hook_schema().
+
+  */
+function cpic_main_schema() {
+
+  //  return $schema;
+}
+

@@ -1,0 +1,4 @@
+name = 消息管理
+description = 消息管理模块
+package = vPaaS-MsgManage
+core = 7.x

@@ -1,0 +1,77 @@
+(function($) {
+    Drupal.behaviors.onlinechat = {
+        attach: function(context, settings) {
+            //scripts start
+        if('WebSocket' in window){
+             console.log('开始创建连接，trying。。。');
+             var jwt = Drupal.settings.onlinechat.jwt;
+             var from = Drupal.settings.onlinechat.from;
+             var to = Drupal.settings.onlinechat.to;
+
+            var sock = new WebSocket("ws://121.42.173.144:10001/app?jwt="+jwt);
+                //    var socket = io.connect('http://121.42.173.144:10001');
+             //       var sock = new SockJS('http://121.42.173.144:10001/app');
+                    sock.onopen = function() {
+                        $("span.chat-status").html('连接已经建立,可以发送消息给'+to);
+                       //  var jsonObj2 = { jwt:jwt};
+                       //  var jsonStr = JSON.stringify( jsonObj2 );
+                      //   console.log("state"+sock.readyState);//查看websocket当前状态
+
+                       //  sock.send(jsonStr);
+                        console.log("state 2 ="+sock.readyState);//查看websocket当前状态
+
+                         var jsonObj1 = {fm:from, u:from,to:to,e:'您好'+to,atn:'s_t',j:jwt};
+                         var jsonStr1 = JSON.stringify( jsonObj1 );
+
+                         sock.send(jsonStr1);
+                          //监听回车事件
+                          $('input.inputMessage').bind('keyup', function(event) {
+                            if (event.keyCode == "13") {
+                                //回车发送
+                                var sendText = $(this).val();
+                                var jsonObj1 = {fm:from, u:from,to:to,e:sendText,atn:'s_t',j:jwt};
+                                var jsonStr1 = JSON.stringify( jsonObj1 );
+                                sock.send(jsonStr1);
+                                $('ul.chat-thread').append(" <li>"+sendText+"</li>");
+                                $("#InterlocutionWrap").scrollTop($("#Interlocution").height());
+                         
+                            }
+                        });
+
+
+
+
+                    };
+                    sock.onmessage = function(e) {
+                        console.log('message', e.data);
+                        var jsonObj = JSON.parse(e.data)
+                        if(jsonObj.c==70001){
+                            $("span.chat-status").html('发送失败，重新发送中....'+to);
+
+                        }else{
+                            $("span.chat-status").html('发送成功'+to);
+                            $('ul.chat-thread').append(" <li>"+jsonObj.e+"</li>");
+                            $("#InterlocutionWrap").scrollTop($("#Interlocution").height());
+                        }
+                    };
+                    sock.onclose = function() {
+                        updateCoversationStatus('连接对方服务器主动关闭');
+                    };
+                     sock.onerror = function (e) {
+                        updateCoversationStatus('连接出现错误，重新连接');
+                     }
+
+        
+            }else{
+                    alert('本浏览器不支持WebSocket哦~');
+            }
+            //scripts end
+
+        }
+    }
+
+function updateCoversationStatus(text){
+        $("span.chat-status").html(text);
+}
+
+})(jQuery);

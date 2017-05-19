@@ -1,0 +1,1133 @@
+<?php
+
+define('REALTIME_IMG_URL_PREFIX', 'http://112.253.25.51:8090/sites/default/files/upload/realplay/');
+define('FIRE_STATICS_TABLE','fire_statics');
+/**
+ * Implementation of hook_menu().
+ * @author dein
+ */
+function cpic_main_menu() {
+
+
+
+  $items['homepage'] = array(
+        'title' => t('首页'),
+        'type' => MENU_NORMAL_ITEM,
+        'page callback' => 'fire_leading_homepage',
+        'weight'=>-18,
+        'page arguments' => NULL,
+        'access callback' => 'user_is_logged_in',
+        'menu_name' => 'main-menu',
+        'file' => 'cpic_main.pages.inc',
+    );
+  $items['fundings'] = array(
+        'title' => t('基金库'),
+        'type' => MENU_NORMAL_ITEM,
+        'page callback' => 'fire_leading_homepage_corp_map',
+        'weight'=>-18,
+        'page arguments' => NULL,
+        'access callback' => 'user_is_logged_in',
+        'file' => 'cpic_main.pages.inc',
+    );
+  $items['homepage/map/%'] = array(
+        'title' => t('区域地图'),
+        'type' => MENU_CALLBACK,
+        'page callback' => 'cpic_main_homepage_area_corp_map',
+        'weight'=>-18,
+        'page arguments' => array(2),
+        'access callback' => 'user_is_logged_in',
+        'file' => 'cpic_main.pages.inc',
+    );
+  
+  $items['telnets'] = array(
+        'title' => t('智库'),
+        'type' => MENU_NORMAL_ITEM,
+        'page callback' => 'fire_leading_homepage_corp_list',
+        'weight'=>-18,
+        'page arguments' => NULL,
+        'access callback' => 'user_is_logged_in',
+        'menu_name' => 'main-menu',
+        'file' => 'cpic_main.pages.inc',
+    );
+
+  $items['homepage/list/%/%'] = array(
+        'title' => t('企业列表'),
+        'type' => MENU_CALLBACK,
+        'page callback' => 'fire_leading_homepage_area_corp_list',
+        'weight'=>-18,
+        'page arguments' => array(2,3),
+        'access callback' => 'user_is_logged_in',
+        'file' => 'cpic_main.pages.inc',
+    );
+  $items['homepage/list/ajax/view/%/%'] = array(
+        'title' => t('企业列表'),
+        'type' => MENU_CALLBACK,
+        'page callback' => 'fire_leading_homepage_area_corp_list_ajax_get',
+        'weight'=>-18,
+        'page arguments' => array(4,5),
+        'access callback' => 'user_is_logged_in',
+        'file' => 'cpic_main.pages.inc',
+    );
+
+  $items['homepage/%/%'] = array(
+        'title' => t('某机构首页'),
+        'type' => MENU_CALLBACK,
+        'weight'=>-20,
+        'page callback' => 'cpic_main_org_homepage',
+        'page arguments' => array(1,2),
+        'access callback' => 'user_is_logged_in',
+  
+        'file' => 'cpic_main.pages.inc',
+    );
+  // $items['homepage/%/%'] = array(
+  //       'title' => t('某区域的首页地图'),
+  //       'type' => MENU_CALLBACK,
+  //       'weight'=>-20,
+  //       'page callback' => 'cpic_main_org_homepage_bmap',
+  //       'page arguments' => array(1,2),
+  //       'access callback' => 'user_is_logged_in',
+  
+  //       'file' => 'cpic_main.pages.inc',
+  //   );  
+    $items['cpic_main/bmap/ajax/getall/%'] = array(
+        'title' => t('Ajax获取所有企业地理位置'),
+        // 'access callback' => TRUE,
+        'type' => MENU_CALLBACK,
+        'weight' => -11,
+        'page callback' => 'cpic_main_bmap_ajax_getall',
+        'page arguments' => array(4),
+        'access callback' => 'user_is_logged_in',
+        'file' => 'cpic_main.pages.inc',
+    );
+
+    //区域，企业综合排名
+    $items['kpi/rank'] = array(
+         'title' => t('综合排名页面'),
+         'type' => MENU_CALLBACK,
+         'page callback' => 'cpic_main_kpi_rank',
+         'page arguments' => null,
+         'access arguments' => array('acesss kpi data'),
+         'file' => 'cpic_main.kpi.inc',
+     );
+    
+    
+    $items['kpi/rank/%'] = array(
+         'title' => t('综合排名获取数据'),
+         'type' => MENU_CALLBACK,
+         'page callback' => 'cpic_main_kpi_rank_page',
+         'page arguments' => array(2,3),
+         'access arguments' => array('acesss kpi data'),
+         'file' => 'cpic_main.kpi.inc',
+     );
+
+    $items['cpic_main/get/ajax/kpi/rank/data'] = array(
+         'title' => t('获取综合排名数据'),
+         'type' => MENU_CALLBACK,
+         'page callback' => 'get_ajax_kpi_rank_data',
+         'page arguments' => NULL,
+         'access arguments' => array('acesss kpi data'),
+         'file' => 'cpic_main.kpi.inc',
+     );
+
+    $items['cpic_main/get/ajax/kpi/rank/data/qu'] = array(
+         'title' => t('获取综合排名数据 区界面'),
+         'type' => MENU_CALLBACK,
+         'page callback' => 'get_ajax_kpi_rank_data_qu',
+         'page arguments' => NULL,
+         'access arguments' => array('acesss kpi data'),
+         'file' => 'cpic_main.kpi.inc',
+     );
+    
+
+   
+    //招投标
+    $items['bid'] = array(
+        'title' => t('招投标'),
+        'type' => MENU_NORMAL_ITEM,
+        'weight'=>-21,
+        'page callback' => 'cpic_main_bids',
+        'page arguments' => NULL,
+        'access callback' => 'user_is_logged_in',
+        'menu_name' => 'main-menu',
+        'file' => 'cpic_main.kpi.inc',
+    ); 
+
+       $items['onlinechat'] = array(
+        'title' => t('在线交流'),
+        'type' => MENU_NORMAL_ITEM,
+        'page callback' => 'cpic_main_online_chat',
+        'weight'=>-18,
+        'page arguments' => NULL,
+        'access callback' => 'user_is_logged_in',
+        'menu_name' => 'main-menu',
+        'file' => 'cpic_main.kpi.inc',
+        );
+
+    return $items;
+}
+
+/**
+ * Implements hook_custom_theme().
+ *
+ * This is where all of templage change  magic happens.
+ * the current request and returns a custom theme.
+ */
+/*
+function cpic_main_custom_theme() {
+  
+  if (user_is_logged_in()) {
+    return 'xftheme';
+  }else{
+    return 'nexus';
+
+  }
+}
+*/
+
+/**
+ * Implements hook_permission().
+ */
+function cpic_main_permission() {
+  return array(
+    'access kpi data' => array(
+      'title' => t('允许查看统计数据'),
+      'description' => t('具有此类权限的人可以查看各类统计数据，企业或者用户只能看到本企业的统计数据.'),
+    ),
+  );
+}
+
+
+
+function user_is_leader(){
+    global $user; 
+    return in_array('消防大队', array_values($user->roles)) || in_array('消防支队', array_values($user->roles)) || ($user->uid ==1);
+
+}
+
+/* hook_theme
+ * 
+ */
+function cpic_main_theme($existing, $type, $theme, $path)
+{
+    return array(
+
+     'cpic_main_homepage' => array(
+           'template' => 'cpic--main--homepage',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),
+      
+      'cpic_main_selection' => array(
+           'template' => 'fire--main--selection',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),
+
+      'cpic_main_org_homepage_bmap' => array(
+           'template' => 'fire--org--homepage--bmap',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),        
+        
+     /*统计*/
+ 
+     'fire_kpi_static' => array(
+           'template' => 'fire--kpi--static',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),
+
+        
+      /*统计分析*/
+ 
+     'fire_kpi_data' => array(
+           'template' => 'fire--kpi--data',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),
+
+     'fire_kpi_compare' => array(
+           'template' => 'fire--kpi--compare',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),
+        
+        /*综合排名*/
+ 
+     'fire_kpi_rank' => array(
+           'template' => 'fire--kpi--rank',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),
+
+     'fire_kpi_rank_area' => array(
+           'template' => 'fire--kpi--rank--area',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),
+
+     'fire_kpi_rank_area_corp' => array(
+           'template' => 'fire--kpi--rank--area--corp',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),
+
+        
+
+
+     'fire_kpi_inspect' => array(
+           'template' => 'fire--kpi--inspect',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),
+     'fire_kpi_controlroom' => array(
+           'template' => 'fire--kpi--controlroom',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),
+     'fire_kpi_firelane' => array(
+           'template' => 'fire--kpi--firelane',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),
+     'fire_kpi_hydrant_waterpress' => array(
+           'template' => 'fire--kpi--hydrant--waterpress',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),
+        
+     'fire_kpi_sprinkler_waterpress' => array(
+           'template' => 'fire--kpi--sprinkler--waterpress',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),
+        
+     'fire_kpi_box_waterlevel' => array(
+           'template' => 'fire--kpi--box--waterlevel',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),   
+        
+     'fire_kpi_pool_waterlevel' => array(
+           'template' => 'fire--kpi--pool--waterlevel',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),
+        
+      'fire_kpi_safeindex' => array(
+           'template' => 'fire--kpi--safeindex',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),  
+      //数据对比
+     'fire_kpi_compare_inspect' => array(
+           'template' => 'fire--compare--inspect',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),
+     'fire_kpi_compare_controlroom' => array(
+           'template' => 'fire--compare--controlroom',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),
+     'fire_kpi_compare_firelane' => array(
+           'template' => 'fire--compare--firelane',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),
+     'fire_kpi_compare_hydrant_waterpress' => array(
+           'template' => 'fire--compare--hydrant--waterpress',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),
+        
+     'fire_kpi_compare_sprinkler_waterpress' => array(
+           'template' => 'fire--compare--sprinkler--waterpress',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),
+        
+     'fire_kpi_compare_box_waterlevel' => array(
+           'template' => 'fire--compare--box--waterlevel',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),   
+        
+     'fire_kpi_compare_pool_waterlevel' => array(
+           'template' => 'fire--compare--pool--waterlevel',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),
+        
+      'fire_kpi_compare_safeindex' => array(
+           'template' => 'fire--compare--safeindex',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),  
+
+      //企业列表
+      'area_corp_table_list'=> array(
+           'template' => 'fire--corp--tbllist',
+           'variables' => array(
+               'node' => NULL,
+               'dev' => NULL,
+
+               ),
+           'path' => drupal_get_path('module', 'cpic_main').'/tpl',
+    
+      ),  
+
+ );
+    
+}
+
+/*
+ * implement hook_cron
+ */
+function cpic_main_cron() {
+
+    // 生成所有的企业统计数据
+    /*
+        $query = db_select('node','n');
+        $query->condition('type', 'org');
+        $query->fields('n');
+
+        $results = $query->execute();
+        $year  =  date('Y', strtotime('now'));
+        $month =  date('m', strtotime('now'));
+        $day =  date('d', strtotime('now'));
+        $total_minutes = getMinutesOfMonth($month,$year);
+        
+        foreach($results as $row){
+           $query = db_merge('fire_statics')
+              ->key(array(
+                'nid' => $row->nid,
+                'type' => 'corp',
+                'year' => $year,
+                'month' => $month,  
+                'day'=>$day,                                      
+              ))
+              ->fields(array(
+                'year'=>$year,
+                'month'=>$month,  
+                'day'=>$day,                                      
+                'totalmins' => $total_minutes,
+                'inspectrate' => 0,
+                'ctrlroomoff' => 0,
+                'ctrlroom_offtime' => 0,  
+                'firelaneoccp' => 0,
+                'firelane_occptime' => 0,
+                'hydrant_waterpress' => 0,
+                'sprinkler_waterpress' => 0,
+                'box_waterlevel' => 0,
+                'pool_waterlevel' => 0,
+                'safeindex' => 0,
+                
+              ))
+              ->execute();
+        
+        }
+        // 添加企业类型的统计数据
+         $vac_modes = taxonomy_vocabulary_machine_name_load('businesstype');
+         $terms = taxonomy_get_tree($vac_modes->vid);
+         foreach($terms as $term){
+            $query = db_merge('fire_statics')
+              ->key(array(
+                'nid' => $term->tid,
+                'type' => 'btype',
+                'year' => $year,
+                'month' => $month,  
+                'day'=>$day,                                      
+              ))
+              ->fields(array(
+                'year'=>$year,
+                'month'=>$month,  
+                'day'=>$day,                                      
+                'totalmins' => $total_minutes,
+                'inspectrate' => 0,
+                'ctrlroomoff' => 0,
+                'ctrlroom_offtime' => 0,  
+                'firelaneoccp' => 0,
+                'firelane_occptime' => 0,
+                'hydrant_waterpress' => 0,
+                'sprinkler_waterpress' => 0,
+                'box_waterlevel' => 0,
+                'pool_waterlevel' => 0,
+                'safeindex' => 0,
+                
+              ))
+              ->execute();
+        
+        }
+            
+        // 添加行政区域的统计数据
+       $vac_modes = taxonomy_vocabulary_machine_name_load('district');
+       $terms = taxonomy_get_tree($vac_modes->vid);
+       foreach($terms as $term){
+           $query = db_merge('fire_statics')
+              ->key(array(
+                'nid' => $term->tid,
+                'type' => 'district',
+                'year' => $year,
+                'month' => $month,  
+                'day'=>$day,                                      
+              ))
+              ->fields(array(
+                'year'=>$year,
+                'month'=>$month,  
+                'day'=>$day,                    
+                'totalmins' => $total_minutes,
+                'inspectrate' => 0,
+                'ctrlroomoff' => 0,
+                'ctrlroom_offtime' => 0,  
+                'firelaneoccp' => 0,
+                'firelane_occptime' => 0,
+                'hydrant_waterpress' => 0,
+                'sprinkler_waterpress' => 0,
+                'box_waterlevel' => 0,
+                'pool_waterlevel' => 0,
+                'safeindex' => 0,
+                
+              ))
+              ->execute();
+        
+       }
+        
+       drupal_set_message('统计数据初始化成功');
+       */
+}
+/**
+ * Implements hook_node_insert
+ */
+
+function cpic_main_node_insert($node) {
+
+    if ($node->type == 'org') {  //添加一个企业时候，需要生成数据。
+    }
+}
+
+/* Implementation hook_node_delete 
+ * 
+ */
+
+function cpic_main_node_delete($node) {
+    if ($node->type == 'org') {  //添加一个企业时候，需要生成数据。
+
+    db_delete('fire_statics')
+            ->condition('nid', $node->nid)
+            ->condition('type', 'corp')
+            ->execute();
+    }
+}
+
+function cpic_main_cron_job_scheduler_info() {
+    $schedulers = array();
+    $schedulers['create_statics_data'] = array(
+      'worker callback' => 'fire_mian_generate_statics_data_job',
+    );
+   return $schedulers;
+  }
+/*
+*/  
+function fire_mian_generate_statics_data_job($job){
+ //  watchdog('fire_statics', ' external type='.$job['type'].'job id=' . $job['id']);
+
+  if ($job['type'] == 'corp') {
+    //    watchdog('fire_statics', 'innel org_id=' . $job['id'] . 'type=' . $job['type']);
+
+        cpic_main_static_calculate_water_data($job['id']);
+    }
+}
+
+
+function _create_fire_statics_task($type,$id) {
+
+  $statics_job = array(
+      'type' => $type,
+      'id' => $id,
+    //  'period' => 120,
+      'crontab' => "*/5 * * * *",//每2分钟执行一次
+      'periodic' => TRUE,
+  );
+  JobScheduler::get('create_statics_data')->set($statics_job);
+    
+}
+
+function _remove_fire_statics_task($type,$id) {
+
+  $duedatejob = array(
+      'type' => $type,
+      'id' => $id,
+  );
+
+  JobScheduler::get('create_statics_data')->remove($duedatejob);
+
+}
+
+/**
+ * Implements hook_user_login
+ */
+function cpic_main_user_login(&$edit, $account) {
+    if ($account->name != "oakadmin") {
+        if (in_array('企业消防负责人', array_values($account->roles))) {
+            
+            $redirect_url = url('customer/dashboard');
+            
+        } elseif (in_array('消防大队', array_values($account->roles))) {
+            $redirect_url = url('selection');
+        }else{
+            $redirect_url = url('homepage');
+            
+        }
+        // Don't redirect on password reset.
+        $current_menu_item = menu_get_item();
+        if ($current_menu_item['path'] == 'user/reset/%/%/%') {
+            return;
+        }
+// Redirect user to profile page after the login.
+        $_GET['destination'] = $redirect_url;
+    } 
+}
+
+
+/* hook handle_new_alarm
+ * 当产生告警时候，能够记录下告警次数
+ */
+
+function cpic_main_handle_new_alarm($event) {
+    $year  =  date('Y', strtotime('now'));
+    $month =  date('m', strtotime('now'));
+       
+   switch($event->eventtype){ //10 - 消防通道  11-控制室  30-水压  31-巡检
+    
+    case 10: 
+        $org = _vpaas_org_get_specified_org($event->instid); 
+        db_update('fire_statics')
+        ->expression('firelaneoccp', 'firelaneoccp + 1')
+        ->condition('nid', $org->nid)
+        ->condition('type', 'corp')
+        ->condition('year', $year)
+        ->condition('month', $month)
+        ->execute();
+        
+        break;
+    case 11:
+       $org = _vpaas_org_get_specified_org($event->instid); 
+        db_update('fire_statics')
+        ->expression('ctrlroomoff', 'ctrlroomoff + 1')
+        ->condition('nid', $org->nid)
+        ->condition('type', 'corp')
+        ->condition('year', $year)
+        ->condition('month', $month)
+        ->execute();
+        break;
+    case 30:
+      //类型：1-消火栓水压, 2-喷淋水压, 3-水箱水位, 4-水池水位
+      switch ($event->assettype) {
+        case '1':
+          db_update('fire_statics')
+            ->expression('hydrant_waterpress', 'hydrant_waterpress + '.$event->duration)
+            ->condition('nid', $event->orgnid)
+            ->condition('type', 'corp')
+            ->condition('year', $year)
+            ->condition('month', $month)
+            ->execute();
+          break;
+        case '2':
+          db_update('fire_statics')
+            ->expression('sprinkler_waterpress', 'sprinkler_waterpress + '.$event->duration)
+            ->condition('nid', $event->orgnid)
+            ->condition('type', 'corp')
+            ->condition('year', $year)
+            ->condition('month', $month)
+            ->execute();
+          break;
+        case '3':
+          db_update('fire_statics')
+            ->expression('box_waterlevel', 'box_waterlevel + '.$event->duration)
+            ->condition('nid', $event->orgnid)
+            ->condition('type', 'corp')
+            ->condition('year', $year)
+            ->condition('month', $month)
+            ->execute();
+          break;  
+        case '4':
+          db_update('fire_statics')
+            ->expression('pool_waterlevel', 'pool_waterlevel + '.$event->duration)
+            ->condition('nid', $event->orgnid)
+            ->condition('type', 'corp')
+            ->condition('year', $year)
+            ->condition('month', $month)
+            ->execute();
+          break;                     
+      }
+
+        break;
+    case 31:
+        db_update('fire_statics')
+        ->expression('inspectrate', $event->inspectrate)
+        ->condition('nid', $org->nid)
+        ->condition('type', 'corp')
+        ->condition('year', $year)
+        ->condition('month', $month)
+        ->execute();
+        break;
+
+    }
+        
+}
+
+
+//实时计算企业的安全系数
+function cpic_main_calculate_safeindex($org_nid){
+
+    $now = time();
+    $month = date("m",$now); //当前月份
+    $year = date("Y",$now); //当前年
+    
+
+  //火灾自动报警系统扣分
+     $fire_autoalarm_deduct_points = 0;
+
+     //消火栓水压
+     $hydrant_press_deduct_points = _fire_water_calcuate_deduct_points($org_nid,WATER_DEVICE_XHS_CHANNEL, $month, $year); 
+
+      //喷淋水压
+     $shink_press_deduct_points = _fire_water_calcuate_deduct_points($org_nid,WATER_DEVICE_PLMD_CHANNEL, $month, $year); ; 
+
+    //消防水池水位
+     $water_pool_deduct_points = _fire_water_calcuate_deduct_points($org_nid,WATER_DEVICE_POOL_CHANNEL, $month, $year); ; 
+
+    //消防水箱水位
+     $water_box_deduct_points = _fire_water_calcuate_deduct_points($org_nid,WATER_DEVICE_TANK_CHANNEL, $month, $year); ; 
+
+      //消防巡查 (未检查数/总设备数 － 0.2)*50
+     
+     $corp_inspect_rate_deduct_points = _fire_inspect_calcuate_deduct_points($org_nid,INSPECTION_EXECUTOR_CORP); 
+
+     //维保检查
+     $maintence_inspect_rate_deduct_points = _fire_inspect_calcuate_deduct_points($org_nid,INSPECTION_EXECUTOR_MAINTENTANCE); 
+
+   //教育培训
+     $education_deduct_points = 0; 
+
+   //灭火演练
+     $drill_rate_deduct_points = 0; 
+
+  //在线考试
+     $exam_rate_deduct_points = 0; 
+
+     $current_score = 100 - $fire_autoalarm_deduct_points - $hydrant_press_deduct_points - $shink_press_deduct_points -  $water_pool_deduct_points -  $water_box_deduct_points - $corp_inspect_rate_deduct_points -  $maintence_inspect_rate_deduct_points -$education_deduct_points -  $drill_rate_deduct_points -   $exam_rate_deduct_points;
+
+     return  ($current_score < 0  ? 0 : $current_score);
+
+
+
+}
+
+
+function cpic_main_kpi_get_typefield_data($org_nid,$type_field)
+{
+    $query = db_select("fire_statics","s");
+    $query->fields("s", array("month",$type_field));
+    $query->condition("nid",$org_nid);
+    $query->condition("year",date("Y",time()));
+
+    $results = $query->execute()->fetchAllKeyed();
+
+    $xdata = "";
+    $ydata = "";
+    foreach ($results as $k => $v) {
+        if (!$xdata) {
+            $xdata .= "['".date("Y",time())."年".$k."月'";
+            $ydata .= "['".$v."'";
+        }
+        else{
+            $xdata .= ",'".date("Y",time())."年".$k."月'";
+            $ydata .= ",'".$v."'";            
+        }
+
+    }
+    $xdata .= "]";
+    $ydata .= "]";   
+
+    $xydata =  array(
+      'xdata' =>$xdata , 
+      'ydata' =>$ydata 
+      );
+
+    return $xydata;
+}
+
+
+function cpic_main_kpi_get_datalevel($id){
+    $data =array();
+    switch ($id){
+        case 1:
+            $data[] = array(
+              'id'=>1,
+              'text'=>'全部巡检率'  
+            );
+            $data[] = array(
+              'id'=>2,
+              'text'=>'巡检率达到80%以上单位'  
+            );
+            $data[] = array(
+              'id'=>3,
+              'text'=>'巡检率未达到80%以上单位'  
+            );
+        break; 
+        case 2:
+            $data[] = array(
+              'id'=>1,
+              'text'=>'全部'  
+            );
+            $data[] = array(
+              'id'=>2,
+              'text'=>'脱岗时间0小时'  
+            );
+            $data[] = array(
+              'id'=>3,
+              'text'=>'脱岗时间0～5小时'  
+            );
+            $data[] = array(
+              'id'=>4,
+              'text'=>'脱岗时间大于5小时'  
+            );
+        break; 
+        case 3: //消防车道
+            $data[] = array(
+              'id'=>1,
+              'text'=>'全部'  
+            );
+            $data[] = array(
+              'id'=>2,
+              'text'=>'占用时间0小时'  
+            );
+            $data[] = array(
+              'id'=>3,
+              'text'=>'占用时间0～5小时'  
+            );
+            $data[] = array(
+              'id'=>4,
+              'text'=>'占用时间大于5小时'  
+            );
+        break; 
+        case 4: //消火栓
+            $data[] = array(
+              'id'=>1,
+              'text'=>'全部'  
+            );
+            $data[] = array(
+              'id'=>2,
+              'text'=>'达标'  
+            );
+            $data[] = array(
+              'id'=>3,
+              'text'=>'未达标'  
+            );
+        break; 
+        case 5: //喷淋系统
+            $data[] = array(
+              'id'=>1,
+              'text'=>'全部'  
+            );
+            $data[] = array(
+              'id'=>2,
+              'text'=>'达标'  
+            );
+            $data[] = array(
+              'id'=>3,
+              'text'=>'未达标'  
+            );
+        break; 
+        case 6: //消防水箱水位状态
+            $data[] = array(
+              'id'=>1,
+              'text'=>'全部'  
+            );
+            $data[] = array(
+              'id'=>2,
+              'text'=>'达标'  
+            );
+            $data[] = array(
+              'id'=>3,
+              'text'=>'未达标'  
+            );
+        break; 
+        case 7: //消防水池水位状态
+            $data[] = array(
+              'id'=>1,
+              'text'=>'全部'  
+            );
+            $data[] = array(
+              'id'=>2,
+              'text'=>'达标'  
+            );
+            $data[] = array(
+              'id'=>3,
+              'text'=>'未达标'  
+            );
+        break; 
+        case 8: //消防安全评估
+            $data[] = array(
+              'id'=>1,
+              'text'=>'全部'  
+            );
+            $data[] = array(
+              'id'=>2,
+              'text'=>'不满60分'  
+            );
+            $data[] = array(
+              'id'=>3,
+              'text'=>'大于60分而不满80分'  
+            );
+            $data[] = array(
+              'id'=>4,
+              'text'=>'80分以上'  
+            );
+        break; 
+        
+    }
+    
+    
+    drupal_json_output($data);
+}
+
+/*获取某个月有多少分钟
+ * 
+ */
+ function getMinutesOfMonth($month, $year) {
+    switch ($month) {
+        case 4 :
+        case 6 :
+        case 9 :
+        case 11 :
+            $days = 30;
+            break;
+        case 2 :
+            if ($year % 4 == 0) {
+                if ($year % 100 == 0) {
+                    $days = $year % 400 == 0 ? 29 : 28;
+                } else {
+                    $days = 29;
+                }
+            } else {
+                $days = 28;
+            }
+            break;
+
+        default :
+            $days = 31;
+            break;
+    }
+    return $days*24*60;
+}
+
+//统计数据总结
+function cpic_main_static_calculate_water_data($org_nid){
+
+    $water_asset_number = fire_water_get_asset_number($org_nid);
+    $falut_asset = fire_water_get_falut_asset_number($org_nid);
+     $year  =  date('Y', strtotime('now'));
+     $month =  date('m', strtotime('now'));
+     $day =  date('d', strtotime('now'));
+     $type  = 'corp';   
+     watchdog('fire_statics', '每分钟更新数据： org_id='.$org_nid.'water_asset_number='.$water_asset_number);
+
+    if($water_asset_number){
+        $waterrank = $falut_asset['total_duration']/$water_asset_number + 100*($falut_asset['falut_device']/$water_asset_number);
+    }else{
+        $waterrank =0 ;
+    }
+    $query = db_merge('fire_statics_water')
+              ->key(array(
+                'nid' => $org_nid,
+                'type' => $type,
+                'year' => $year,
+                'month' => $month,  
+                'day'=>$day,                                      
+              ))
+              ->fields(array(
+                'year'=>$year,
+                'month'=>$month,  
+                'day'=>$day,                    
+                'totaldevice' => $water_asset_number,
+                'falutdevice' => $falut_asset['falut_device'],
+                'totalduration'=> $falut_asset['total_duration'],
+                'waterrank' => $waterrank, //报警时间/设备数+100*合格率。
+              ))
+              ->execute();
+    //更新所在的市区
+        $district_total_devices = $district_falut_asset = $district_total_druation =  $district_waterrank = 0; 
+        $query = db_select('field_data_field_belong_district', 'bd');
+        $query->condition('bd.bundle', 'org')
+              ->groupBy(('bd.field_belong_district_tid'))
+                    ->fields('bd');
+        $results = $query->execute();
+        foreach($results as $row){
+            $squer = db_select('fire_statics_water', 'sw');
+            $squer->condition('sw.nid', $row->entity_id);
+            $squer->condition('sw.type', 'corp');
+            $squer->condition('sw.year', $year);
+            $squer->condition('sw.month', $month);
+            
+            $squer->condition('sw.day', $day)
+                  ->fields('sw');
+            $query_rest = $squer->execute()->fetchObject();
+            if($query_rest){
+            $district_total_devices = $district_total_devices +$query_rest->totaldevice;
+            $district_falut_asset   = $district_falut_asset + $query_rest->falutdevice;
+            $district_total_druation  = $district_total_druation + $query_rest->totalduration;
+            $district_waterrank = $district_waterrank + $query_rest->waterrank;
+            }
+       watchdog('fire_statics', '更新区域信息： t_id='.$row->field_belong_district_tid.' device='.$district_total_devices);
+
+        $type = "district";
+        $query = db_merge('fire_statics_water')
+              ->key(array(
+                'nid' => $row->field_belong_district_tid,
+                'type' => $type,
+                'year' => $year,
+                'month' => $month,  
+                'day'=>$day,                                      
+              ))
+              ->fields(array(
+                'year'=>$year,
+                'month'=>$month,  
+                'day'=>$day,                    
+                'totaldevice' => $district_total_devices,
+                'falutdevice' => $district_falut_asset,
+                'totalduration'=> $district_total_druation,
+                'waterrank' => $district_waterrank, //报警时间/设备数+100*合格率。
+              ))
+              ->execute();
+    
+        }
+       
+}

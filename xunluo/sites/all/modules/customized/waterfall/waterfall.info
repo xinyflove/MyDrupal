@@ -1,0 +1,10 @@
+;$Id$
+
+name = Waterfall
+description = Waterfall, 瀑布流布局.
+core = 7.x
+package = waterfall
+files[] = waterfall.module
+
+;dependencies[] = autoload
+;php = 5.2
